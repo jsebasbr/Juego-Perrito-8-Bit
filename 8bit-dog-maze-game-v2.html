@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>8-Bit Dog Maze Game v2</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+            font-family: 'Courier New', monospace;
+        }
+        #game-container {
+            text-align: center;
+        }
+        #game-board {
+            display: inline-block;
+            border: 4px solid #000;
+            image-rendering: pixelated;
+        }
+        #message {
+            margin-top: 20px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <h1>8-Bit Dog Maze Game v2</h1>
+        <canvas id="game-board" width="330" height="330"></canvas>
+        <div id="message">Use arrow keys to move the dog to the bone!</div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('game-board');
+        const ctx = canvas.getContext('2d');
+        const message = document.getElementById('message');
+        const tileSize = 30;
+        let dogPosition = { x: 1, y: 5 };
+        let hasBone = false;
+
+        const maze = [
+            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+            [1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1],
+            [1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1],
+            [1, 0, 1, 0, 1, 1, 1, 0, 1, 0, 1],
+            [1, 0, 1, 0, 1, 2, 1, 0, 1, 0, 1],
+            [1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1],
+            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+            [1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1],
+            [1, 0, 0, 0, 0, 0, 0, 0, 0, 3, 1],
+            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+        ];
+
+        function drawMaze() {
+            for (let y = 0; y < 11; y++) {
+                for (let x = 0; x < 11; x++) {
+                    if (maze[y][x] === 1) {
+                        ctx.fillStyle = '#000000';
+                        ctx.fillRect(x * tileSize, y * tileSize, tileSize, tileSize);
+                    } else if (maze[y][x] === 2 && !hasBone) {
+                        drawBone(x, y);
+                    } else if (maze[y][x] === 3) {
+                        ctx.fillStyle = '#FF0000';
+                        ctx.fillRect(x * tileSize, y * tileSize, tileSize, tileSize);
+                    }
+                }
+            }
+        }
+
+        function drawDog(x, y) {
+            const scale = 0.8;
+            const offsetX = tileSize * (1 - scale) / 2;
+            const offsetY = tileSize * (1 - scale) / 2;
+
+            // Body
+            ctx.fillStyle = '#A0522D';
+            ctx.fillRect(x * tileSize + offsetX, y * tileSize + offsetY + tileSize * 0.2 * scale, tileSize * 0.8 * scale, tileSize * 0.4 * scale);
+            
+            // Head
+            ctx.fillRect(x * tileSize + offsetX, y * tileSize + offsetY, tileSize * 0.6 * scale, tileSize * 0.4 * scale);
+            
+            // Ears
+            ctx.fillStyle = '#8B4513';
+            ctx.fillRect(x * tileSize + offsetX, y * tileSize + offsetY - tileSize * 0.2 * scale, tileSize * 0.2 * scale, tileSize * 0.2 * scale);
+            ctx.fillRect(x * tileSize + offsetX + tileSize * 0.4 * scale, y * tileSize + offsetY - tileSize * 0.2 * scale, tileSize * 0.2 * scale, tileSize * 0.2 * scale);
+            
+            // Legs
+            ctx.fillRect(x * tileSize + offsetX, y * tileSize + offsetY + tileSize * 0.6 * scale, tileSize * 0.2 * scale, tileSize * 0.2 * scale);
+            ctx.fillRect(x * tileSize + offsetX + tileSize * 0.6 * scale, y * tileSize + offsetY + tileSize * 0.6 * scale, tileSize * 0.2 * scale, tileSize * 0.2 * scale);
+            
+            // Eye
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(x * tileSize + offsetX + tileSize * 0.1 * scale, y * tileSize + offsetY + tileSize * 0.1 * scale, tileSize * 0.1 * scale, tileSize * 0.1 * scale);
+            
+            // Nose
+            ctx.fillRect(x * tileSize + offsetX, y * tileSize + offsetY + tileSize * 0.3 * scale, tileSize * 0.1 * scale, tileSize * 0.1 * scale);
+        }
+
+        function drawBone(x, y) {
+            ctx.fillStyle = '#F0E68C';
+            ctx.fillRect(x * tileSize + 10, y * tileSize + 13, tileSize - 20, 4);
+            ctx.fillRect(x * tileSize + 13, y * tileSize + 10, 4, tileSize - 20);
+        }
+
+        function updateGame() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawMaze();
+            drawDog(dogPosition.x, dogPosition.y);
+        }
+
+        function moveDog(dx, dy) {
+            const newX = dogPosition.x + dx;
+            const newY = dogPosition.y + dy;
+
+            if (newX >= 0 && newX < 11 && newY >= 0 && newY < 11 && maze[newY][newX] !== 1) {
+                dogPosition.x = newX;
+                dogPosition.y = newY;
+
+                if (!hasBone && maze[newY][newX] === 2) {
+                    hasBone = true;
+                    message.textContent = "You got the bone! Now reach the red square to win!";
+                }
+
+                if (hasBone && maze[newY][newX] === 3) {
+                    message.textContent = "Congratulations! You've completed the level!";
+                }
+
+                updateGame();
+            }
+        }
+
+        document.addEventListener('keydown', (e) => {
+            switch(e.key) {
+                case 'ArrowUp': moveDog(0, -1); break;
+                case 'ArrowDown': moveDog(0, 1); break;
+                case 'ArrowLeft': moveDog(-1, 0); break;
+                case 'ArrowRight': moveDog(1, 0); break;
+            }
+        });
+
+        updateGame();
+    </script>
+</body>
+</html>
