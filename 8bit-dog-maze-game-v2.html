@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>8-Bit Dog Maze Game v2</title>
+    <title>Rancherito y su hueso</title>
     <style>
         body {
             display: flex;
@@ -33,7 +33,7 @@
     <div id="game-container">
         <h1>8-Bit Dog Maze Game v2</h1>
         <canvas id="game-board" width="330" height="330"></canvas>
-        <div id="message">Use arrow keys to move the dog to the bone!</div>
+        <div id="message">¡Usa las flechas para llevar a rancherito hasta su hueso y luego la salida!</div>
     </div>
 
     <script>
@@ -125,11 +125,11 @@
 
                 if (!hasBone && maze[newY][newX] === 2) {
                     hasBone = true;
-                    message.textContent = "You got the bone! Now reach the red square to win!";
+                    message.textContent = "¡Tienes el hueso! ahora ve a la salida para ganar";
                 }
 
                 if (hasBone && maze[newY][newX] === 3) {
-                    message.textContent = "Congratulations! You've completed the level!";
+                    message.textContent = "¡Felicidades! Completaste el nivel";
                 }
 
                 updateGame();
