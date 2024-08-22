@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rancherito y su juguete</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+            font-family: 'Arial', sans-serif;
+        }
+        .game-container {
+            text-align: center;
+        }
+        h1 {
+            color: #8B4513;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+        h2 {
+            color: #4CAF50;
+            font-size: 1.2em;
+            margin-bottom: 20px;
+            max-width: 400px;
+            line-height: 1.4;
+        }
+        canvas {
+            border: 10px solid #8B4513;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>Rancherito y su juguete</h1>
+        <h2>Este perro salchicha necesita atrapar su juguete, ayúdalo en su aventura</h2>
+        <canvas id="gameCanvas" width="400" height="400"></canvas>
+    </div>
+    <svg id="dogSvg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 32" style="display: none;">
+        <!-- Dog SVG code remains the same -->
+        <rect x="8" y="8" width="48" height="16" fill="#8B4513"/>
+        <rect x="8" y="24" width="8" height="8" fill="#8B4513"/>
+        <rect x="48" y="24" width="8" height="8" fill="#8B4513"/>
+        <rect x="0" y="8" width="16" height="16" fill="#8B4513"/>
+        <rect x="4" y="12" width="4" height="4" fill="black"/>
+        <rect x="0" y="16" width="4" height="4" fill="black"/>
+        <rect x="12" y="4" width="8" height="8" fill="#8B4513"/>
+        <rect x="56" y="8" width="8" height="8" fill="#8B4513"/>
+    </svg>
+    <script>
+        // The JavaScript code remains largely the same, with a few modifications
+
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        const gridSize = 20;
+        const tileCount = canvas.width / gridSize;
+
+        let dog = [
+            { x: 10, y: 10 },
+        ];
+        let dx = 0;
+        let dy = 0;
+
+        let boneX = 15;
+        let boneY = 15;
+
+        let score = 0;
+
+        const dogSvg = document.getElementById('dogSvg');
+        const dogImg = new Image();
+        dogImg.src = 'data:image/svg+xml;base64,' + btoa(new XMLSerializer().serializeToString(dogSvg));
+
+        const grassPattern = createGrassPattern();
+
+        function createGrassPattern() {
+            const patternCanvas = document.createElement('canvas');
+            const patternCtx = patternCanvas.getContext('2d');
+            patternCanvas.width = 20;
+            patternCanvas.height = 20;
+
+            patternCtx.fillStyle = '#7CFC00';
+            patternCtx.fillRect(0, 0, 20, 20);
+
+            patternCtx.strokeStyle = '#90EE90';
+            patternCtx.lineWidth = 1;
+            patternCtx.beginPath();
+            patternCtx.moveTo(0, 0);
+            patternCtx.lineTo(20, 20);
+            patternCtx.moveTo(20, 0);
+            patternCtx.lineTo(0, 20);
+            patternCtx.stroke();
+
+            return ctx.createPattern(patternCanvas, 'repeat');
+        }
+
+        function drawGame() {
+            clearCanvas();
+            moveDog();
+            checkBoneCollision();
+            drawBone();
+            drawDog();
+            drawScore();
+
+            setTimeout(drawGame, 100);
+        }
+
+        function clearCanvas() {
+            ctx.fillStyle = grassPattern;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+
+        function drawDog() {
+            for (let i = 0; i < dog.length; i++) {
+                ctx.save();
+                ctx.translate(dog[i].x * gridSize + gridSize / 2, dog[i].y * gridSize + gridSize / 2);
+                
+                if (i < dog.length - 1) {
+                    const nextSegment = dog[i + 1];
+                    const angle = Math.atan2(nextSegment.y - dog[i].y, nextSegment.x - dog[i].x);
+                    ctx.rotate(angle);
+                } else if (dx !== 0 || dy !== 0) {
+                    const angle = Math.atan2(dy, dx);
+                    ctx.rotate(angle);
+                }
+                
+                ctx.drawImage(dogImg, -gridSize / 2, -gridSize / 2, gridSize, gridSize);
+                ctx.restore();
+            }
+        }
+
+        function drawBone() {
+            ctx.fillStyle = 'white';
+            ctx.strokeStyle = 'black';
+            ctx.lineWidth = 2;
+
+            const x = boneX * gridSize;
+            const y = boneY * gridSize;
+            const width = gridSize - 2;
+            const height = gridSize - 2;
+
+            ctx.beginPath();
+            ctx.arc(x + width * 0.2, y + height / 2, height * 0.3, 0, Math.PI * 2);
+            ctx.arc(x + width * 0.8, y + height / 2, height * 0.3, 0, Math.PI * 2);
+            ctx.rect(x + width * 0.2, y + height * 0.3, width * 0.6, height * 0.4);
+            ctx.fill();
+            ctx.stroke();
+        }
+
+        function moveDog() {
+            const head = { x: dog[0].x + dx, y: dog[0].y + dy };
+            dog.unshift(head);
+
+            if (head.x === boneX && head.y === boneY) {
+                score++;
+                generateBone();
+            } else {
+                dog.pop();
+            }
+
+            if (head.x < 0 || head.x >= tileCount || head.y < 0 || head.y >= tileCount) {
+                gameOver();
+            }
+
+            for (let i = 1; i < dog.length; i++) {
+                if (head.x === dog[i].x && head.y === dog[i].y) {
+                    gameOver();
+                }
+            }
+        }
+
+        function generateBone() {
+            boneX = Math.floor(Math.random() * tileCount);
+            boneY = Math.floor(Math.random() * tileCount);
+        }
+
+        function checkBoneCollision() {
+            if (dog[0].x === boneX && dog[0].y === boneY) {
+                score++;
+                generateBone();
+            }
+        }
+
+        function drawScore() {
+            ctx.fillStyle = 'black';
+            ctx.font = 'bold 20px Arial';
+            ctx.fillText('Puntuación: ' + score, 10, 30);
+        }
+
+        function gameOver() {
+            alert('¡Juego terminado! Tu puntuación: ' + score);
+            dog = [{ x: 10, y: 10 }];
+            dx = 0;
+            dy = 0;
+            score = 0;
+        }
+
+        document.addEventListener('keydown', changeDirection);
+
+        function changeDirection(event) {
+            const LEFT_KEY = 37;
+            const RIGHT_KEY = 39;
+            const UP_KEY = 38;
+            const DOWN_KEY = 40;
+
+            const keyPressed = event.keyCode;
+            const goingUp = dy === -1;
+            const goingDown = dy === 1;
+            const goingRight = dx === 1;
+            const goingLeft = dx === -1;
+
+            if (keyPressed === LEFT_KEY && !goingRight) {
+                dx = -1;
+                dy = 0;
+            }
+
+            if (keyPressed === UP_KEY && !goingDown) {
+                dx = 0;
+                dy = -1;
+            }
+
+            if (keyPressed === RIGHT_KEY && !goingLeft) {
+                dx = 1;
+                dy = 0;
+            }
+
+            if (keyPressed === DOWN_KEY && !goingUp) {
+                dx = 0;
+                dy = 1;
+            }
+        }
+
+        dogImg.onload = drawGame;
+    </script>
+</body>
+</html>
